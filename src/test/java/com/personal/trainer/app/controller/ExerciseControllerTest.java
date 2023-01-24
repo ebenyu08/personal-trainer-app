@@ -37,6 +37,13 @@ class ExerciseControllerTest {
     @Autowired
     private ExerciseController exerciseController;
 
+    @BeforeEach
+    public void resetData() throws Exception {
+        mockMvc.perform(delete("/exercises"))
+                .andDo(print())
+                .andExpect(status().isOk());
+    }
+
     @Test
     public void getAllExercisesTest() throws Exception {
 
@@ -52,6 +59,31 @@ class ExerciseControllerTest {
 
         assertTrue(new ReflectionEquals(expectedResult, "id").matches(actualResult));
 
+    }
+
+    @Test
+    public void getExerciseByNameTest() throws Exception {
+        mockMvc.perform(post("/exercises")
+                .contentType("application/json").content(getTestData()))
+                .andDo(print())
+                .andExpect(status().isCreated())
+                .andReturn()
+                .getResponse()
+                .getContentAsString();
+
+        String testData = getTestData();
+        List<Exercise> testDataExercises = OBJECT_MAPPER.readValue(testData, new TypeReference<>(){});
+
+        for (Exercise exercise : testDataExercises) {
+            Exercise actualResult = OBJECT_MAPPER.readValue(mockMvc.perform(get("/exercises/" + exercise.getName()))
+                    .andDo(print())
+                    .andExpect(status().isOk())
+                    .andReturn()
+                    .getResponse()
+                    .getContentAsString(), new TypeReference<>() {
+            });
+            assertTrue(new ReflectionEquals(exercise, "id").matches(actualResult));
+        }
     }
 
     @Test
